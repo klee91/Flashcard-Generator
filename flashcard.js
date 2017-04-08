@@ -1,8 +1,9 @@
 
 //variables npm and modules
 var inquirer = require('inquirer');
-const fs = require('fs');
+var sql = require("./sql.js");
 var mysql = require("mysql");
+var constructor = require("./constructor.js");
 
 //SQL connection
 var connection = mysql.createConnection({
@@ -16,12 +17,6 @@ var connection = mysql.createConnection({
   password: "Jaklee91!",
   database: "flashcardsDB"
 });
-
-//
-// connection.connect(function(err) {
-//   if (err) {console.log(err)};
-//   console.log("connected as id " + connection.threadId);
-// });
 
 //variables for user input
 var user;
@@ -82,11 +77,10 @@ inquirer.prompt([
 					text = answers.text;
 					cloze = answers.cloze;
 					flashcardGen();
-
 				});
 			}
 		});
-		
+
 	//read flashcards if user
 	} else if (user == "USER") {
 		inquirer.prompt([
@@ -98,22 +92,22 @@ inquirer.prompt([
 			}
 		]).then(function(answers) {
 			if (answers.cardtype == "BASIC") {
-				connection.query("SELECT * FROM basic", function(err, res) {
+				sql.connection.query("SELECT * FROM basic", function(err, res) {
 		  			if (err) {console.log(err)};
 		  			for (var i = 0; i < res.length ; i++) {
 		  				console.log("Question: " + res[i].question + " | " + "Answer: " + res[i].answer + " | ");
 		  			}
 		  			
 				});
-				connection.end();
+				sql.connection.end();
 			} else if (answers.cardtype == "CLOZE") {
-				connection.query("SELECT * FROM cloze", function(err, res) {
+				sql.connection.query("SELECT * FROM cloze", function(err, res) {
 		  			if (err) {console.log(err)};
 		  			for (var i = 0; i < res.length ; i++) {
 		  				console.log("Text: " + res[i].text + " | " + "Cloze: " + res[i].cloze + " | ");
 		  			}
 				});
-				connection.end();
+				sql.connection.end();
 			}
 		});
 	}
@@ -122,35 +116,12 @@ inquirer.prompt([
 //Flashcard Generator Function
 function flashcardGen() {
 
-	//Basic card constructor
-	var BasicCard = function(front, back) {
-		this.front = front;
-		this.back = back;
-	};
-
-	//Cloze card constructor
-	var ClozeCard = function(text, cloze) {
-		this.text = text;
-		this.cloze = cloze;
-		this.clozeDel = function() {
-			return this.cloze;
-		};
-		this.partial = function() {
-			var self = this.text
-			var partialtext = self.replace(this.cloze , "...");
-			console.log("Partial Text: " + partialtext);
-		};
-		this.fullText = function() {
-			console.log("Full Text: " + this.text);
-		};
-	};
-
 	//conditional check for either basic or cloze flashcard
 	if (type == "BASIC") {
-		var flashcardBasic = new BasicCard(question,answer);
+		var flashcardBasic = new constructor.BasicCard(question,answer);
 
 		//MySQL database entry
-		connection.query("INSERT INTO basic (question,answer) VALUES (?, ?)", [question, answer], function(err, res) {
+		sql.connection.query("INSERT INTO basic (question,answer) VALUES (?, ?)", [question, answer], function(err, res) {
   			if (err) {console.log(err)};
   			console.log("Flashcard Added");
   			console.log(flashcardBasic);
@@ -166,14 +137,14 @@ function flashcardGen() {
 		if (result === false) {
 			console.log("Error has occured: " + cloze + " does not exist inside " + text + ". Please check and resubmit your input.");
 		} else {
-			var flashcardCloze = new ClozeCard(text, cloze);
+			var flashcardCloze = new constructor.ClozeCard(text, cloze);
 
 			//MySQL database entry
-			connection.query("INSERT INTO cloze (text, cloze) VALUES (?, ?)", [text, cloze], function(err, res) {
+			sql.connection.query("INSERT INTO cloze (text, cloze) VALUES (?, ?)", [text, cloze], function(err, res) {
   				if (err) {console.log(err)};
   				console.log("Flashcard added");
 			});
-			connection.end();
+			sql.connection.end();
 			console.log(flashcardCloze);
 		}
 	}
