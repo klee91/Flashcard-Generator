@@ -1,39 +1,134 @@
-// var firstPresident = new BasicCard(
-//     "Who was the first president of the United States?", "George Washington");
 
-// // "Who was the first president of the United States?"
-// console.log(firstPresident.front); 
+//variables npm and modules
+var inquirer = require('inquirer');
+const fs = require('fs');
+var mysql = require("mysql");
 
-// // "George Washington"
-// console.log(firstPresident.back); 
+//SQL connection
+var connection = mysql.createConnection({
+  host: "localhost",
+  port: 3306,
 
-// var firstPresidentCloze = new ClozeCard(
-//     "George Washington was the first president of the United States.", "George Washington");
+  // Your username
+  user: "root",
 
-// // "George Washington"
-// console.log(firstPresidentCloze.cloze); 
+  // Your password
+  password: "Jaklee91!",
+  database: "flashcardsDB"
+});
 
-// // " ... was the first president of the United States.
-// console.log(firstPresidentCloze.partial); "
-
-// // "George Washington was the first president of the United States.
-// console.log(firstPresidentCloze.fullText): "
-
-// // Should throw or log an error because "oops" doesn't appear in "This doesn't work"
-// var brokenCloze("This doesn't work", "oops"); 
+//
+// connection.connect(function(err) {
+//   if (err) {console.log(err)};
+//   console.log("connected as id " + connection.threadId);
+// });
 
 //variables for user input
-var type = process.argv[2];
-var question = process.argv[3];
-var answer = process.argv[4];
+var user;
+var type;
+var question;
+var answer;
+var text;
+var cloze;
 
+inquirer.prompt([
+	{
+		type:"list",
+		name: "usertype",
+		message: "Are you an 'admin' or a 'user'?",
+		choices: ["ADMIN", "USER"]
+	}
+]).then(function(answers){
+	user = answers.usertype;
+	//generate flashcard if admin
+	if (user == "ADMIN") {
+		inquirer.prompt([
+			{
+				type: "list",
+				name: "cardtype",
+				message: "What kind of flashcard do you want to generate?",
+				choices: ["BASIC" , "CLOZE"]
+			}
+		]).then(function(answers) {
+			type = answers.cardtype;
+			if (type == "BASIC") {
+				inquirer.prompt([
+				{
+					type: "input",
+					name: "question",
+					message: "Enter question"
+				}, {
+					type: "input",
+					name: "answer",
+					message: "Enter answer"
+				}
+				]).then(function(answers){
+					question = answers.question;
+					answer = answers.answer;
+					flashcardGen();
+				});
+			} else if (type == "CLOZE") {
+				inquirer.prompt([
+				{
+					type: "input",
+					name: "text",
+					message: "Enter text"
+				}, {
+					type: "input",
+					name: "cloze",
+					message: "Enter cloze"
+				}
+				]).then(function(answers){
+					text = answers.text;
+					cloze = answers.cloze;
+					flashcardGen();
+
+				});
+			}
+		});
+		
+	//read flashcards if user
+	} else if (user == "USER") {
+		inquirer.prompt([
+			{
+				type: "list",
+				name: "cardtype",
+				message: "What kind of flashcards do you want listed?",
+				choices: ["BASIC" , "CLOZE"]
+			}
+		]).then(function(answers) {
+			if (answers.cardtype == "BASIC") {
+				connection.query("SELECT * FROM basic", function(err, res) {
+		  			if (err) {console.log(err)};
+		  			for (var i = 0; i < res.length ; i++) {
+		  				console.log("Question: " + res[i].question + " | " + "Answer: " + res[i].answer + " | ");
+		  			}
+		  			
+				});
+				connection.end();
+			} else if (answers.cardtype == "CLOZE") {
+				connection.query("SELECT * FROM cloze", function(err, res) {
+		  			if (err) {console.log(err)};
+		  			for (var i = 0; i < res.length ; i++) {
+		  				console.log("Text: " + res[i].text + " | " + "Cloze: " + res[i].cloze + " | ");
+		  			}
+				});
+				connection.end();
+			}
+		});
+	}
+});
+
+//Flashcard Generator Function
 function flashcardGen() {
 
+	//Basic card constructor
 	var BasicCard = function(front, back) {
 		this.front = front;
 		this.back = back;
 	};
 
+	//Cloze card constructor
 	var ClozeCard = function(text, cloze) {
 		this.text = text;
 		this.cloze = cloze;
@@ -51,31 +146,35 @@ function flashcardGen() {
 	};
 
 	//conditional check for either basic or cloze flashcard
-	if (type == "basic") {
+	if (type == "BASIC") {
 		var flashcardBasic = new BasicCard(question,answer);
-		console.log("Front: " + flashcardBasic.front);
-		console.log("Back: " + flashcardBasic.back);
-	} else {
+
+		//MySQL database entry
+		connection.query("INSERT INTO basic (question,answer) VALUES (?, ?)", [question, answer], function(err, res) {
+  			if (err) {console.log(err)};
+  			console.log("Flashcard Added");
+  			console.log(flashcardBasic);
+		});
+		connection.end();
+	} else if (type == "CLOZE") {
 		//error check if cloze arg is in text arg
 		// if (cloze )
-		var check = new RegExp(answer);
-		var result = check.test(question);
+		var check = new RegExp(cloze);
+		var result = check.test(text);
 
 		//Error check if cloze exists in text. Case-sensitive.
 		if (result === false) {
-			console.log("Error has occured: " + cloze + " does not exist in " + text ". Please check and resubmit your input.");
+			console.log("Error has occured: " + cloze + " does not exist inside " + text + ". Please check and resubmit your input.");
 		} else {
-			var flashcardCloze = new ClozeCard(question,answer);
-			console.log("Text: " + flashcardCloze.text);
-			console.log("Cloze: " + flashcardCloze.clozeDel());
-			flashcardCloze.partial();
-			flashcardCloze.fullText();
+			var flashcardCloze = new ClozeCard(text, cloze);
+
+			//MySQL database entry
+			connection.query("INSERT INTO cloze (text, cloze) VALUES (?, ?)", [text, cloze], function(err, res) {
+  				if (err) {console.log(err)};
+  				console.log("Flashcard added");
+			});
+			connection.end();
+			console.log(flashcardCloze);
 		}
 	}
 };
-
-flashcardGen();
-
-
-
-
