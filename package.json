@@ -1,0 +1,30 @@
+{
+  "name": "flashcard-generator",
+  "version": "1.0.0",
+  "description": "A Node CLI that can create basic/cloze flashcards.",
+  "main": "flashcard.js",
+  "dependencies": {
+    "inquirer": "^3.0.6",
+    "mysql": "^2.13.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "\"echo \\\"Error: no test specified\\\" && exit 1\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/klee91/Flashcard-Generator.git"
+  },
+  "keywords": [
+    "flashcard",
+    "flashcard-generator",
+    "cloze",
+    "construtor"
+  ],
+  "author": "Kevin S. Lee",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/klee91/Flashcard-Generator/issues"
+  },
+  "homepage": "https://github.com/klee91/Flashcard-Generator#readme"
+}
