@@ -1,7 +1,6 @@
 
 //variables npm and modules
 var inquirer = require('inquirer');
-var sql = require("./sql.js");
 var mysql = require("mysql");
 var constructor = require("./constructor.js");
 
@@ -92,22 +91,22 @@ inquirer.prompt([
 			}
 		]).then(function(answers) {
 			if (answers.cardtype == "BASIC") {
-				sql.connection.query("SELECT * FROM basic", function(err, res) {
+				connection.query("SELECT * FROM basic", function(err, res) {
 		  			if (err) {console.log(err)};
 		  			for (var i = 0; i < res.length ; i++) {
 		  				console.log("Question: " + res[i].question + " | " + "Answer: " + res[i].answer + " | ");
 		  			}
 		  			
 				});
-				sql.connection.end();
+				connection.end();
 			} else if (answers.cardtype == "CLOZE") {
-				sql.connection.query("SELECT * FROM cloze", function(err, res) {
+				connection.query("SELECT * FROM cloze", function(err, res) {
 		  			if (err) {console.log(err)};
 		  			for (var i = 0; i < res.length ; i++) {
 		  				console.log("Text: " + res[i].text + " | " + "Cloze: " + res[i].cloze + " | ");
 		  			}
 				});
-				sql.connection.end();
+				connection.end();
 			}
 		});
 	}
@@ -121,7 +120,7 @@ function flashcardGen() {
 		var flashcardBasic = new constructor.BasicCard(question,answer);
 
 		//MySQL database entry
-		sql.connection.query("INSERT INTO basic (question,answer) VALUES (?, ?)", [question, answer], function(err, res) {
+		connection.query("INSERT INTO basic (question,answer) VALUES (?, ?)", [question, answer], function(err, res) {
   			if (err) {console.log(err)};
   			console.log("Flashcard Added");
   			console.log(flashcardBasic);
@@ -140,11 +139,11 @@ function flashcardGen() {
 			var flashcardCloze = new constructor.ClozeCard(text, cloze);
 
 			//MySQL database entry
-			sql.connection.query("INSERT INTO cloze (text, cloze) VALUES (?, ?)", [text, cloze], function(err, res) {
+			connection.query("INSERT INTO cloze (text, cloze) VALUES (?, ?)", [text, cloze], function(err, res) {
   				if (err) {console.log(err)};
   				console.log("Flashcard added");
 			});
-			sql.connection.end();
+			connection.end();
 			console.log(flashcardCloze);
 		}
 	}
