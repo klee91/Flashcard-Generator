@@ -18,3 +18,6 @@ CREATE TABLE cloze (
 
 SELECT * FROM basic;
 SELECT * FROM cloze;
+
+insert cloze values ('a', 'b');
+delete from basic where id =1;
